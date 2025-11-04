@@ -1,0 +1,14 @@
+# Ignorar o diretório inteiro do MySQL
+/mysql/
+
+# Ignorar arquivos de ambiente (Contêm SENHAS!)
+# NUNCA envie o .env para o GitHub
+/.env
+/.env.local
+/app/.env
+
+# Dependências do Composer (são instaladas, não comitadas)
+/vendor/
+
+# Cache e logs do Symfony
+/var/
