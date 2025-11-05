@@ -2,55 +2,51 @@
 
 namespace App\Controller;
 
-// Importações (use) necessárias
-use App\Entity\Product;
-use Doctrine\ORM\EntityManagerInterface;
-// A LINHA QUE PROVAVELMENTE ESTÁ FALTANDO É ESTA:
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-// -----------------------------------------------------------------
-use Symfony\Component\HttpFoundation\JsonResponse;
+use App\Entity\Product; // Certifique-se que este 'use' está presente
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route; // 'Attribute' é o correto para S7
 
 class ProductController extends AbstractController
 {
     /**
-     * Rota original (pode manter ou remover)
+     * Esta rota agora lida com GET (mostrar formulário) e POST (processar formulário)
      */
-    #[Route('/product', name: 'app_product')]
-    public function index(): JsonResponse
+    #[Route('/product', name: 'create_product', methods: ['GET', 'POST'])]
+    public function createProduct(Request $request, EntityManagerInterface $entityManager): Response
     {
-        return $this->json([
-            'message' => 'Bem-vindo ao ProductController!',
-            'path' => 'src/Controller/ProductController.php',
+        // Variável para controlar a mensagem de sucesso
+        $success = false;
+
+        // Se o formulário foi enviado (método POST)
+        if ($request->isMethod('POST')) {
+            // 1. Obtenha os dados do formulário
+            $name = $request->request->get('name');
+            $price = $request->request->get('price');
+            // ADICIONADO PARA EVITAR O ERRO:
+            $description = $request->request->get('description'); 
+
+            // 2. Crie e salve o produto
+            $product = new Product();
+            $product->setName($name);
+            $product->setPrice($price);
+            // ADICIONADO PARA EVITAR O ERRO:
+            $product->setDescription($description);
+
+            $entityManager->persist($product);
+            $entityManager->flush();
+
+            // 3. Marque como sucesso
+            $success = true;
+        }
+
+        // 4. Renderize a view (o formulário)
+        // Isso acontece em ambos os casos (GET ou POST)
+        return $this->render('product/create.html.twig', [
+            'success' => $success,
         ]);
     }
-
-    /**
-     * NOVA ROTA: Baseada na documentação "Persistindo Objetos"
-     * Esta rota irá criar e salvar um novo produto.
-     */
-    #[Route('/product/create', name: 'app_product_create')]
-    public function createProduct(EntityManagerInterface $entityManager): Response
-    {
-        // 1. Instancie sua entidade Product
-        $product = new Product();
-        
-        // 2. Defina os dados (use os setters que o make:entity criou)
-        $product->setName('Teclado Ergonômico');
-        $product->setPrice(199.99); 
-        $product->setDescription('Um ótimo teclado para longas horas de digitação.');
-
-        // 3. "Persist"
-        $entityManager->persist($product);
-
-        // 4. "Flush"
-        $entityManager->flush();
-
-        // 5. Retorne uma resposta
-        return new JsonResponse([
-            'message' => 'Produto salvo com sucesso!',
-            'productId' => $product->getId()
-        ], Response::HTTP_CREATED); 
-    }
 }
+
